@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from pydantic import BaseModel, Field
 
-from tools import deploy_to_elevenlabs
+from eleven_labs_helper import deploy_to_elevenlabs
 
 load_dotenv()
 

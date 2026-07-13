@@ -23,14 +23,14 @@ def build_ui() -> gr.Blocks:
     state_value = initial_state()
 
     with gr.Blocks(
-        title="Voice AI Builder",
+        title="SalesAI",
         head=HEAD,
         fill_width=False,
     ) as demo:
         state = gr.State(state_value)
 
         gr.Markdown(
-            "# Voice AI Builder\n"
+            "# SalesAI \n"
             "Create and deploy a lead qualification voice agent."
         )
 
@@ -58,7 +58,7 @@ def build_ui() -> gr.Blocks:
                 )
 
                 deploy_button = gr.Button(
-                    "Deploy to ElevenLabs",
+                    "Deploy",
                     variant="primary",
                 )
 
