@@ -1,53 +1,120 @@
-# Voice AI Builder Demo
+# SalesAI 📞
 
-A local Gradio demo that lets a user create and edit a structured voice-agent configuration through chat, deploy or update the agent in ElevenLabs, and record mock meeting bookings in memory.
+An AI-powered builder for creating and deploying lead qualification voice agents using OpenAI Structured Outputs and ElevenLabs.
 
-## Features
+# Table of Contents
 
-- Chat-based assistant creation and editing
-- Live editable JSON configuration
-- No database; all state resets when the app restarts
-- Create/update an ElevenLabs Conversational AI agent
-- Link to the ElevenLabs agent page for browser voice testing
-- Local mock meeting-booking flow
+- [About the Project](#about-the-project)
+- [Getting Started](#getting-started)
+- [Architecture](#architecture)
+- [Design Decisions](#design-decisions)
+- [Future Improvements](#future-improvements)
+- [Resources & References](#resources--references)
 
-## Setup
+# About the Project
+
+SalesAI is a proof-of-concept application that allows users to build lead qualification voice agents entirely through natural language.
+
+Rather than manually configuring an AI assistant, users simply describe the desired behavior through a chat interface. An OpenAI-powered builder extracts the required information into a structured configuration using Pydantic and OpenAI Structured Outputs, which can then be deployed directly to ElevenLabs with a single click.
+
+The project demonstrates how LLMs can act as AI builders, allowing users to create production-ready voice agents without manually configuring prompts or conversation settings.
+
+# Getting Started
+
+## Requirements
+
+- OpenAI API Key
+- ElevenLabs API Key
+- Docker
+
+## Installation
+
+### 1. Clone the repository
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
+git clone https://github.com/itaybaror/SalesAI.git
+cd SalesAI
 ```
 
-Add your OpenAI and ElevenLabs keys to `.env`. Set `ELEVENLABS_VOICE_ID` to a voice ID from your ElevenLabs account, or leave it blank to use the platform default.
 
-Run:
+### 2. Create a `.env` file in the project root containing:
+
+```text
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_MODEL=gpt-5-mini
+ELEVENLABS_API_KEY=your_elevenlabs_api_key
+ELEVENLABS_VOICE_ID=your_elevenlabs_voice_id
+```
+
+- `OPENAI_API_KEY` – Your OpenAI API key.
+- `OPENAI_MODEL` – The OpenAI model used by the builder (e.g. `gpt-5-mini`).
+- `ELEVENLABS_API_KEY` – Your ElevenLabs API key.
+- `ELEVENLABS_VOICE_ID` – *(Optional)* The ElevenLabs voice ID used for deployed agents. Leave this blank to use the default voice.
+
+### 3. Build the Docker image
 
 ```bash
-python app.py
-```
-
-Open the local Gradio URL shown in the terminal.
-
-## Suggested demo
-
-1. Ask: `Build a friendly assistant that qualifies SaaS leads and books demos.`
-2. Ask: `Make it more concise and ask about company size before budget.`
-3. Review or edit the JSON configuration.
-4. Click **Deploy / Update ElevenLabs agent**.
-5. Open the generated ElevenLabs URL and test the agent by voice.
-6. Add a mock booking in the accordion to show the successful outcome.
-
-## Notes
-
-The ElevenLabs API occasionally changes payload details. Deployment errors are shown directly in the UI, including the API response, making any account-specific adjustment straightforward.
-# SalesAI
-
-
-
 docker build -t sales-ai .
+```
 
+### 4. Run the container
+
+```bash
 docker run --rm --env-file .env -p 7860:7860 sales-ai
+```
 
-http://localhost:7860
+### 5. Open your browser and navigate to:
+
+```
+http://localhost:7860 
+```
+
+# Architecture
+
+```mermaid
+flowchart LR
+
+A[User]
+B[Gradio UI]
+C[OpenAI Builder]
+D[Pydantic Model]
+E[ElevenLabs API]
+F[Voice Agent]
+
+A --> B
+B --> C
+C --> D
+D --> E
+E --> F
+```
+
+
+## Workflow
+
+1. The user describes the desired voice agent through the chat interface.
+2. The builder extracts the required information into a strongly typed Pydantic model.
+3. The generated configuration is displayed for review.
+4. Once complete, the assistant is deployed directly to ElevenLabs.
+
+# Design Decisions
+
+- **Gradio** provides a simple interface while keeping frontend code to a minimum.
+- **OpenAI Structured Outputs + Pydantic** guarantee a predictable assistant configuration without manual JSON parsing.
+- **Local application state** keeps the application lightweight and removes the need for a database.
+- **ElevenLabs** handles voice agent execution while SalesAI focuses solely on agent creation.
+
+# Future Improvements
+
+SalesAI was intentionally built as a focused proof of concept demonstrating how an LLM can create and deploy voice agents through natural language. If developed into a production platform, it would become an end-to-end outbound sales solution.
+
+Users would be able to build a voice agent through chat, upload a CSV of leads, launch outbound calling campaigns through ElevenLabs, automatically qualify prospects, and book meetings using calendar integrations such as Google Calendar or Cal.com. The platform could also provide campaign analytics, CRM integrations (e.g., HubSpot and Salesforce), agent templates, and conversation history, allowing businesses to create, deploy, and manage voice sales agents from a single interface.
+
+# Resources & References
+
+### OpenAI: https://platform.openai.com/docs
+
+### ElevenLabs https://elevenlabs.io/docs
+
+### Gradio https://www.gradio.app/docs
+
+### Docker https://docs.docker.com
