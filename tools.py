@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-ELEVENLABS_BASE_URL = "https://api.elevenlabs.io/v1/convai/agents"
+ELEVENLABS_AGENTS_URL = "https://api.elevenlabs.io/v1/convai/agents"
 
 
 def build_agent_prompt(config: dict[str, Any]) -> str:
@@ -49,20 +49,24 @@ Approved company facts:
 {company_facts}
 
 Rules:
-- Use only the company information provided above.
-- Never invent or assume products, services, pricing, policies, availability,
-  customers, guarantees, or other company details.
-- If a lead asks for information that is not provided, say that you do not
-  have that information and offer to arrange a follow-up.
+- Use only the information explicitly provided above.
+- Never invent company details, products, pricing, policies, or guarantees.
+- If information is unavailable, say you do not have that information.
 - Ask one question at a time.
 - Keep responses concise and conversational.
-- Do not claim that a meeting has been booked unless a booking tool confirms it.
+- Do not claim a meeting was booked unless a tool confirms it.
 """.strip()
 
 
 def build_elevenlabs_payload(
     config: dict[str, Any],
 ) -> dict[str, Any]:
+    if not config.get("agent_name"):
+        raise ValueError("Agent name is required.")
+
+    if not config.get("opening_message"):
+        raise ValueError("Opening message is required.")
+
     conversation_config: dict[str, Any] = {
         "agent": {
             "first_message": config["opening_message"],
@@ -95,17 +99,17 @@ def deploy_to_elevenlabs(
             "message": "ELEVENLABS_API_KEY is missing from .env",
         }
 
-    headers = {
-        "xi-api-key": api_key,
-        "Content-Type": "application/json",
-    }
-
-    payload = build_elevenlabs_payload(config)
-
     try:
+        payload = build_elevenlabs_payload(config)
+
+        headers = {
+            "xi-api-key": api_key,
+            "Content-Type": "application/json",
+        }
+
         if agent_id:
             response = requests.patch(
-                f"{ELEVENLABS_BASE_URL}/{agent_id}",
+                f"{ELEVENLABS_AGENTS_URL}/{agent_id}",
                 headers=headers,
                 json=payload,
                 timeout=30,
@@ -113,7 +117,7 @@ def deploy_to_elevenlabs(
             action = "updated"
         else:
             response = requests.post(
-                f"{ELEVENLABS_BASE_URL}/create",
+                f"{ELEVENLABS_AGENTS_URL}/create",
                 headers=headers,
                 json=payload,
                 timeout=30,
@@ -121,56 +125,45 @@ def deploy_to_elevenlabs(
             action = "created"
 
         response.raise_for_status()
-        response_data = response.json()
-
-        deployed_agent_id = response_data.get(
-            "agent_id",
-            agent_id,
-        )
+        data = response.json()
+        deployed_agent_id = data.get("agent_id", agent_id)
 
         return {
             "success": True,
             "agent_id": deployed_agent_id,
-            "message": f"Agent {action}: {deployed_agent_id}",
-            "test_url": (
-                "https://elevenlabs.io/app/"
-                f"conversational-ai/{deployed_agent_id}"
+            "message": f"Agent {action} successfully.",
+            "dashboard_url": (
+                "https://elevenlabs.io/app/conversational-ai"
             ),
         }
 
+    except ValueError as exc:
+        return {
+            "success": False,
+            "message": str(exc),
+        }
+
     except requests.RequestException as exc:
-        if exc.response is not None:
-            detail = exc.response.text
-        else:
-            detail = str(exc)
+        detail = (
+            exc.response.text
+            if exc.response is not None
+            else str(exc)
+        )
 
         return {
             "success": False,
             "message": f"ElevenLabs deployment failed: {detail}",
         }
 
-
 def mock_book_meeting(
     name: str,
     email: str,
     requested_time: str,
 ) -> dict[str, Any]:
-    if not name.strip():
+    if not name.strip() or not email.strip() or not requested_time.strip():
         return {
             "success": False,
-            "message": "Lead name is required.",
-        }
-
-    if not email.strip():
-        return {
-            "success": False,
-            "message": "Lead email is required.",
-        }
-
-    if not requested_time.strip():
-        return {
-            "success": False,
-            "message": "Requested time is required.",
+            "message": "Name, email, and requested time are required.",
         }
 
     booking = {

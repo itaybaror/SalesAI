@@ -61,9 +61,19 @@ with gr.Blocks(title="Voice AI Builder") as demo:
                 variant="primary",
             )
 
-            test_url = gr.Textbox(
-                label="ElevenLabs test URL",
+            agent_id = gr.Textbox(
+                label="Deployed ElevenLabs agent ID",
                 interactive=False,
+            )
+
+            dashboard_url = gr.Textbox(
+                label="ElevenLabs dashboard",
+                interactive=False,
+            )
+
+            open_dashboard_button = gr.Button(
+                "Open ElevenLabs to test",
+                link="https://elevenlabs.io/app/conversational-ai",
             )
 
     status = gr.Markdown(elem_id="status")
@@ -123,13 +133,14 @@ with gr.Blocks(title="Voice AI Builder") as demo:
     )
 
     deploy_button.click(
-        fn=deploy_agent,
-        inputs=state,
-        outputs=[
-            state,
-            status,
-            test_url,
-        ],
+    fn=deploy_agent,
+    inputs=state,
+    outputs=[
+        state,
+        status,
+        agent_id,
+        dashboard_url,
+    ],
     )
 
     booking_button.click(
@@ -148,14 +159,15 @@ with gr.Blocks(title="Voice AI Builder") as demo:
     )
 
     reset_button.click(
-        fn=reset_demo,
-        outputs=[
-            chatbot,
-            state,
-            config_preview,
-            bookings,
-            status,
-            test_url,
-            message,
-        ],
+    fn=reset_demo,
+    outputs=[
+        chatbot,
+        state,
+        config_preview,
+        bookings,
+        status,
+        agent_id,
+        dashboard_url,
+        message,
+    ],
     )
