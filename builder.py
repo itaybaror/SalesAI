@@ -116,7 +116,13 @@ def update_builder(
     state: dict[str, Any],
 ):
     if not message.strip():
-        return history, state, state["config"], "Enter a message.", ""
+        return (
+            history,
+            state,
+            format_config(state["config"]),
+            "Enter a message.",
+            "",
+        )
 
     history = history + [
         {
@@ -168,7 +174,7 @@ def update_builder(
         }
     )
 
-    return history, state, state["config"], reply, ""
+    return history, state, format_config(state["config"]), reply, ""
 
 
 # Deploys the agent and returns its embedded ElevenLabs widget.
@@ -210,6 +216,54 @@ def deploy_agent(state: dict[str, Any]):
 
     return state, result["message"], agent_id, widget
 
+# Formats the agent configuration for display in the UI.
+def format_config(config: dict[str, Any]) -> str:
+    questions = "\n".join(
+        f"- {question}"
+        for question in config["qualification_questions"]
+    ) or "_Not provided_"
+
+    instructions = "\n".join(
+        f"- {instruction}"
+        for instruction in config["additional_instructions"]
+    ) or "_None_"
+
+    return f"""
+## Assistant Configuration
+
+**Company**
+
+{config["company_name"] or "_Not provided_"}
+
+**Call Goal**
+
+{config["call_goal"] or "_Not provided_"}
+
+**Qualification Questions**
+
+{questions}
+
+**Success Criteria**
+
+{config["success_criteria"] or "_Not provided_"}
+
+**Opening Message**
+
+> {config["opening_message"] or "Not provided"}
+
+**Tone**
+
+{config["tone"]}
+
+**Agent Name**
+
+{config["agent_name"]}
+
+**Additional Instructions**
+
+{instructions}
+""".strip()
+
 
 # Resets the builder and removes the embedded widget.
 def reset_demo():
@@ -218,7 +272,7 @@ def reset_demo():
     return (
         initial_history(),
         state,
-        state["config"],
+        format_config(state["config"]),
         "Demo reset.",
         "",
         "",

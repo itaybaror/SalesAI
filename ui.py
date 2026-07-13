@@ -2,6 +2,7 @@ import gradio as gr
 
 from builder import (
     deploy_agent,
+    format_config,
     initial_history,
     initial_state,
     reset_demo,
@@ -52,9 +53,8 @@ def build_ui() -> gr.Blocks:
                 )
 
             with gr.Column(scale=2):
-                config_preview = gr.JSON(
-                    value=state_value["config"],
-                    label="Current assistant configuration",
+                config_preview = gr.Markdown(
+                    value=format_config(state_value["config"]),
                 )
 
                 deploy_button = gr.Button(
