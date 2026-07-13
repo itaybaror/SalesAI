@@ -68,7 +68,7 @@ Rules:
 """.strip()
 
 
-# Creates a fresh local application state.
+# Creates a fresh local builder state.
 def initial_state() -> dict[str, Any]:
     config = AgentConfig(
         voice_id=os.getenv("ELEVENLABS_VOICE_ID", "")
@@ -100,7 +100,7 @@ def get_client() -> OpenAI:
     return OpenAI(api_key=api_key)
 
 
-# Finds required configuration fields that are still empty.
+# Returns required configuration fields that are still empty.
 def missing_fields(config: dict[str, Any]) -> list[str]:
     return sorted(
         field
@@ -109,7 +109,7 @@ def missing_fields(config: dict[str, Any]) -> list[str]:
     )
 
 
-# Updates the configuration from the latest chat message.
+# Updates the agent configuration from the latest user message.
 def update_builder(
     message: str,
     history: list[dict[str, str]],
@@ -119,7 +119,10 @@ def update_builder(
         return history, state, state["config"], "Enter a message.", ""
 
     history = history + [
-        {"role": "user", "content": message}
+        {
+            "role": "user",
+            "content": message,
+        }
     ]
 
     try:
@@ -143,8 +146,8 @@ def update_builder(
         state = copy.deepcopy(state)
         state["config"] = result.config.model_dump()
 
-        missing = missing_fields(state["config"])
         reply = result.reply
+        missing = missing_fields(state["config"])
 
         if missing:
             fields = ", ".join(
@@ -159,13 +162,16 @@ def update_builder(
         reply = f"I couldn't update the configuration: {exc}"
 
     history.append(
-        {"role": "assistant", "content": reply}
+        {
+            "role": "assistant",
+            "content": reply,
+        }
     )
 
     return history, state, state["config"], reply, ""
 
 
-# Creates or updates the configured ElevenLabs agent.
+# Deploys the agent and returns its embedded ElevenLabs widget.
 def deploy_agent(state: dict[str, Any]):
     missing = missing_fields(state["config"])
 
@@ -175,7 +181,12 @@ def deploy_agent(state: dict[str, Any]):
             for field in missing
         )
 
-        return state, f"Cannot deploy. Missing: {fields}.", "", ""
+        return (
+            state,
+            f"Cannot deploy. Missing: {fields}.",
+            "",
+            "",
+        )
 
     state = copy.deepcopy(state)
 
@@ -187,17 +198,20 @@ def deploy_agent(state: dict[str, Any]):
     if not result["success"]:
         return state, result["message"], "", ""
 
-    state["elevenlabs_agent_id"] = result["agent_id"]
+    agent_id = result["agent_id"]
+    state["elevenlabs_agent_id"] = agent_id
 
-    link = (
-        f"[Open this agent in ElevenLabs]"
-        f"({result['dashboard_url']})"
-    )
+    widget = f"""
+    <div style="display:flex; justify-content:center; padding:24px;">
+        <elevenlabs-convai agent-id="{agent_id}">
+        </elevenlabs-convai>
+    </div>
+    """
 
-    return state, result["message"], result["agent_id"], link
+    return state, result["message"], agent_id, widget
 
 
-# Resets all local demo state.
+# Resets the builder and removes the embedded widget.
 def reset_demo():
     state = initial_state()
 

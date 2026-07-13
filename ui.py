@@ -8,22 +8,24 @@ from builder import (
     update_builder,
 )
 
-CSS = """
-.gradio-container {
-    max-width: 1400px !important;
-}
-
-#status {
-    min-height: 36px;
-}
+HEAD = """
+<script
+    src="https://unpkg.com/@elevenlabs/convai-widget-embed"
+    async
+    type="text/javascript">
+</script>
 """
 
 
-# Builds the Gradio interface and event bindings.
+# Builds the Gradio interface.
 def build_ui() -> gr.Blocks:
     state_value = initial_state()
 
-    with gr.Blocks(title="Voice AI Builder") as demo:
+    with gr.Blocks(
+        title="Voice AI Builder",
+        head=HEAD,
+        fill_width=False,
+    ) as demo:
         state = gr.State(state_value)
 
         gr.Markdown(
@@ -65,12 +67,17 @@ def build_ui() -> gr.Blocks:
                     interactive=False,
                 )
 
-                dashboard_link = gr.Markdown()
+                voice_widget = gr.HTML()
 
-        status = gr.Markdown(elem_id="status")
+        status = gr.Markdown()
         reset_button = gr.Button("Reset demo")
 
-        builder_inputs = [message, chatbot, state]
+        builder_inputs = [
+            message,
+            chatbot,
+            state,
+        ]
+
         builder_outputs = [
             chatbot,
             state,
@@ -98,7 +105,7 @@ def build_ui() -> gr.Blocks:
                 state,
                 status,
                 agent_id,
-                dashboard_link,
+                voice_widget,
             ],
         )
 
@@ -110,7 +117,7 @@ def build_ui() -> gr.Blocks:
                 config_preview,
                 status,
                 agent_id,
-                dashboard_link,
+                voice_widget,
                 message,
             ],
         )

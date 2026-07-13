@@ -1,4 +1,9 @@
-from ui import CSS, demo
+from ui import demo
+
+
+def main() -> None:
+    demo.launch()
+
 
 if __name__ == "__main__":
-    demo.launch(css=CSS)
+    main()
