@@ -10,31 +10,53 @@ ELEVENLABS_BASE_URL = "https://api.elevenlabs.io/v1/convai/agents"
 
 
 def build_agent_prompt(config: dict[str, Any]) -> str:
-    questions = "\n".join(
-        f"{index + 1}. {question}"
-        for index, question in enumerate(
-            config["qualification_questions"]
-        )
+    information_to_collect = "\n".join(
+        f"{index + 1}. {item}"
+        for index, item in enumerate(config["information_to_collect"])
     )
 
-    return f"""
-You are {config["name"]}, a voice-based sales qualification assistant.
+    company_facts = "\n".join(
+        f"- {fact}"
+        for fact in config["company_facts"]
+    )
 
-Goal:
-{config["goal"]}
+    if not company_facts:
+        company_facts = "- No additional company facts were provided."
+
+    return f"""
+You are {config["agent_name"]}, a voice-based sales assistant for
+{config["company_name"]}.
+
+Company description:
+{config["company_description"]}
+
+Target leads:
+{config["target_leads"]}
+
+Call goal:
+{config["call_goal"]}
 
 Tone:
 {config["tone"]}
 
-Qualification questions:
-{questions}
+Information to collect:
+{information_to_collect}
 
-Booking instructions:
-{config["booking_instructions"]}
+Meeting criteria:
+{config["meeting_criteria"]}
 
-Ask one question at a time.
-Keep responses concise and conversational.
-Do not claim that a meeting is booked unless a booking tool confirms it.
+Approved company facts:
+{company_facts}
+
+Rules:
+- Use only the company information provided above.
+- Never invent or assume products, services, pricing, policies, availability,
+  customers, guarantees, or other company details.
+- If a lead asks for information that is not provided, say that you do not
+  have that information and offer to arrange a follow-up.
+- Ask one question at a time.
+- Keep responses concise and conversational.
+- Do not claim that a meeting has been booked unless a booking tool confirms it.
 """.strip()
 
 
@@ -52,11 +74,11 @@ def build_elevenlabs_payload(
 
     if config.get("voice_id"):
         conversation_config["tts"] = {
-            "voice_id": config["voice_id"]
+            "voice_id": config["voice_id"],
         }
 
     return {
-        "name": config["name"],
+        "name": config["agent_name"],
         "conversation_config": conversation_config,
     }
 
@@ -109,9 +131,7 @@ def deploy_to_elevenlabs(
         return {
             "success": True,
             "agent_id": deployed_agent_id,
-            "message": (
-                f"Agent {action}: {deployed_agent_id}"
-            ),
+            "message": f"Agent {action}: {deployed_agent_id}",
             "test_url": (
                 "https://elevenlabs.io/app/"
                 f"conversational-ai/{deployed_agent_id}"
@@ -126,9 +146,7 @@ def deploy_to_elevenlabs(
 
         return {
             "success": False,
-            "message": (
-                f"ElevenLabs deployment failed: {detail}"
-            ),
+            "message": f"ElevenLabs deployment failed: {detail}",
         }
 
 
@@ -165,8 +183,5 @@ def mock_book_meeting(
     return {
         "success": True,
         "booking": booking,
-        "message": (
-            f"Mock meeting booked for "
-            f"{requested_time.strip()}."
-        ),
+        "message": f"Mock meeting booked for {requested_time.strip()}.",
     }

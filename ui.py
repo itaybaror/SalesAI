@@ -3,6 +3,7 @@ import gradio as gr
 from agent import (
     book_meeting,
     deploy_agent,
+    initial_history,
     initial_state,
     reset_demo,
     update_builder,
@@ -31,6 +32,7 @@ with gr.Blocks(title="Voice AI Builder") as demo:
     with gr.Row():
         with gr.Column(scale=3):
             chatbot = gr.Chatbot(
+                value=initial_history(),
                 height=520,
                 label="Builder chat",
             )
