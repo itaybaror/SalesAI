@@ -16,16 +16,14 @@ MODEL = os.getenv("OPENAI_MODEL", "gpt-5-mini")
 
 class AgentConfig(BaseModel):
     company_name: str | None = None
-    company_description: str | None = None
-    target_leads: str | None = None
     call_goal: str | None = None
-    information_to_collect: list[str] = Field(default_factory=list)
-    meeting_criteria: str | None = None
-    company_facts: list[str] = Field(default_factory=list)
-    agent_name: str | None = None
-    voice_id: str = ""
-    tone: str | None = None
+    qualification_questions: list[str] = Field(default_factory=list)
+    success_criteria: str | None = None
     opening_message: str | None = None
+    additional_instructions: list[str] = Field(default_factory=list)
+    tone: str = "Friendly and professional"
+    agent_name: str = "Lead Qualification Assistant"
+    voice_id: str = ""
 
 
 class BuilderResponse(BaseModel):
@@ -33,46 +31,44 @@ class BuilderResponse(BaseModel):
     reply: str
 
 
+REQUIRED_FIELDS = {
+    "company_name",
+    "call_goal",
+    "qualification_questions",
+    "success_criteria",
+    "opening_message",
+}
+
+
 INITIAL_MESSAGE = """
-Before I create your voice agent, please tell me:
+Tell me about the lead qualification agent you need.
 
-1. Your company name
-2. What the company does
-3. Who the agent will speak with
-4. The goal of the calls
-5. What information it should collect
-6. When it should offer a meeting
-7. Any important facts or restrictions
+Please include:
+1. The company name
+2. The purpose of the calls
+3. The questions the agent should ask
+4. What makes a lead qualified
+5. What the agent should say when the call begins
 
-I will not assume or invent company information.
+You can also provide tone or additional restrictions. I will not invent
+company information or qualification rules.
 """.strip()
 
 
 SYSTEM_PROMPT = """
-You configure voice agents.
+You configure outbound lead qualification voice agents.
 
 Strict rules:
 - Use only information explicitly provided by the user.
-- Never guess or invent company facts.
-- Preserve existing values unless the user changes them.
-- Leave unknown text fields as null.
+- Never invent or assume company facts, products, pricing, policies,
+  qualification rules, or customer details.
+- Preserve existing values unless the user explicitly changes them.
+- Leave unknown optional text fields as null.
 - Leave unknown lists empty.
-- Ask for any important missing information.
-- Do not say the agent is ready unless the required information is present.
+- Never generate or change voice_id.
+- Ask clearly for any missing required information.
+- Do not say the configuration is ready unless all required fields are present.
 """.strip()
-
-
-REQUIRED_FIELDS = {
-    "company_name",
-    "company_description",
-    "target_leads",
-    "call_goal",
-    "information_to_collect",
-    "meeting_criteria",
-    "agent_name",
-    "tone",
-    "opening_message",
-}
 
 
 def initial_state() -> dict[str, Any]:
@@ -96,7 +92,7 @@ def initial_history() -> list[dict[str, str]]:
     ]
 
 
-def client() -> OpenAI:
+def get_client() -> OpenAI:
     api_key = os.getenv("OPENAI_API_KEY")
 
     if not api_key:
@@ -126,7 +122,7 @@ def update_builder(
     ]
 
     try:
-        response = client().responses.parse(
+        response = get_client().responses.parse(
             model=MODEL,
             instructions=SYSTEM_PROMPT,
             input=(
@@ -146,8 +142,8 @@ def update_builder(
         state = copy.deepcopy(state)
         state["config"] = result.config.model_dump()
 
-        reply = result.reply
         missing = missing_fields(state["config"])
+        reply = result.reply
 
         if missing:
             readable = ", ".join(
@@ -191,11 +187,15 @@ def deploy_agent(state: dict[str, Any]):
 
     state["elevenlabs_agent_id"] = result["agent_id"]
 
+    dashboard_link = (
+        f"[Open this agent in ElevenLabs]({result['dashboard_url']})"
+    )
+
     return (
         state,
         result["message"],
         result["agent_id"],
-        result["dashboard_url"],
+        dashboard_link,
     )
 
 

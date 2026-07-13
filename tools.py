@@ -10,28 +10,24 @@ ELEVENLABS_AGENTS_URL = "https://api.elevenlabs.io/v1/convai/agents"
 
 
 def build_agent_prompt(config: dict[str, Any]) -> str:
-    information_to_collect = "\n".join(
-        f"{index + 1}. {item}"
-        for index, item in enumerate(config["information_to_collect"])
+    questions = "\n".join(
+        f"{index + 1}. {question}"
+        for index, question in enumerate(
+            config["qualification_questions"]
+        )
     )
 
-    company_facts = "\n".join(
-        f"- {fact}"
-        for fact in config["company_facts"]
+    instructions = "\n".join(
+        f"- {instruction}"
+        for instruction in config["additional_instructions"]
     )
 
-    if not company_facts:
-        company_facts = "- No additional company facts were provided."
+    if not instructions:
+        instructions = "- No additional instructions were provided."
 
     return f"""
-You are {config["agent_name"]}, a voice-based sales assistant for
+You are {config["agent_name"]}, calling on behalf of
 {config["company_name"]}.
-
-Company description:
-{config["company_description"]}
-
-Target leads:
-{config["target_leads"]}
 
 Call goal:
 {config["call_goal"]}
@@ -39,31 +35,29 @@ Call goal:
 Tone:
 {config["tone"]}
 
-Information to collect:
-{information_to_collect}
+Qualification questions:
+{questions}
 
-Meeting criteria:
-{config["meeting_criteria"]}
+A lead is successful or qualified when:
+{config["success_criteria"]}
 
-Approved company facts:
-{company_facts}
+Additional instructions:
+{instructions}
 
 Rules:
-- Use only the information explicitly provided above.
-- Never invent company details, products, pricing, policies, or guarantees.
-- If information is unavailable, say you do not have that information.
-- Ask one question at a time.
+- Use only the information provided in this prompt.
+- Never invent company details, pricing, policies, products, or guarantees.
+- If asked for unavailable information, say you do not have it.
+- Ask one qualification question at a time.
 - Keep responses concise and conversational.
-- Do not claim a meeting was booked unless a tool confirms it.
+- Do not say a lead is qualified unless the success criteria are met.
+- Do not say a meeting is booked unless a booking tool confirms it.
 """.strip()
 
 
 def build_elevenlabs_payload(
     config: dict[str, Any],
 ) -> dict[str, Any]:
-    if not config.get("agent_name"):
-        raise ValueError("Agent name is required.")
-
     if not config.get("opening_message"):
         raise ValueError("Opening message is required.")
 
@@ -126,14 +120,19 @@ def deploy_to_elevenlabs(
 
         response.raise_for_status()
         data = response.json()
+
         deployed_agent_id = data.get("agent_id", agent_id)
+
+        if not deployed_agent_id:
+            raise ValueError("ElevenLabs returned no agent ID.")
 
         return {
             "success": True,
             "agent_id": deployed_agent_id,
             "message": f"Agent {action} successfully.",
             "dashboard_url": (
-                "https://elevenlabs.io/app/conversational-ai"
+                "https://elevenlabs.io/app/conversational-ai/"
+                f"{deployed_agent_id}"
             ),
         }
 
@@ -154,6 +153,7 @@ def deploy_to_elevenlabs(
             "success": False,
             "message": f"ElevenLabs deployment failed: {detail}",
         }
+
 
 def mock_book_meeting(
     name: str,
