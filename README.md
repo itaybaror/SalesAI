@@ -43,3 +43,11 @@ Open the local Gradio URL shown in the terminal.
 
 The ElevenLabs API occasionally changes payload details. Deployment errors are shown directly in the UI, including the API response, making any account-specific adjustment straightforward.
 # SalesAI
+
+
+
+docker build -t sales-ai .
+
+docker run --rm --env-file .env -p 7860:7860 sales-ai
+
+http://localhost:7860

@@ -1,6 +1,6 @@
 import gradio as gr
 
-from builder import (
+from app.builder import (
     deploy_agent,
     format_config,
     initial_history,

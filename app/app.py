@@ -1,4 +1,4 @@
-from ui import demo
+from app.ui import demo
 
 
 def main() -> None:
