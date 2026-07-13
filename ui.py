@@ -1,7 +1,6 @@
 import gradio as gr
 
-from agent import (
-    book_meeting,
+from builder import (
     deploy_agent,
     initial_history,
     initial_state,
@@ -15,159 +14,108 @@ CSS = """
 }
 
 #status {
-    min-height: 44px;
+    min-height: 36px;
 }
 """
 
 
-with gr.Blocks(title="Voice AI Builder") as demo:
-    state = gr.State(initial_state())
+# Builds the Gradio interface and event bindings.
+def build_ui() -> gr.Blocks:
+    state_value = initial_state()
 
-    gr.Markdown(
-        "# Voice AI Builder\n"
-        "Describe the sales assistant you want, refine it through "
-        "chat, and deploy it to ElevenLabs."
-    )
+    with gr.Blocks(title="Voice AI Builder") as demo:
+        state = gr.State(state_value)
 
-    with gr.Row():
-        with gr.Column(scale=3):
-            chatbot = gr.Chatbot(
-                value=initial_history(),
-                height=520,
-                label="Builder chat",
-            )
+        gr.Markdown(
+            "# Voice AI Builder\n"
+            "Create and deploy a lead qualification voice agent."
+        )
 
-            message = gr.Textbox(
-                label="Instruction",
-                placeholder=(
-                    "Build a friendly assistant that qualifies "
-                    "real-estate buyers..."
-                ),
-            )
-
-            send_button = gr.Button(
-                "Send",
-                variant="primary",
-            )
-
-        with gr.Column(scale=2):
-            config_preview = gr.JSON(
-                value=initial_state()["config"],
-                label="Current assistant configuration",
-            )
-
-            deploy_button = gr.Button(
-                "Deploy to ElevenLabs",
-                variant="primary",
-            )
-
-            agent_id = gr.Textbox(
-                label="Deployed ElevenLabs agent ID",
-                interactive=False,
-            )
-
-            dashboard_url = gr.Textbox(
-                label="ElevenLabs dashboard",
-                interactive=False,
-            )
-
-            open_dashboard_button = gr.Button(
-                "Open ElevenLabs to test",
-                link="https://elevenlabs.io/app/conversational-ai",
-            )
-
-    status = gr.Markdown(elem_id="status")
-
-    with gr.Accordion(
-        "Mock meeting booking",
-        open=False,
-    ):
         with gr.Row():
-            lead_name = gr.Textbox(
-                label="Lead name"
-            )
+            with gr.Column(scale=3):
+                chatbot = gr.Chatbot(
+                    value=initial_history(),
+                    height=520,
+                    label="Builder chat",
+                )
 
-            lead_email = gr.Textbox(
-                label="Lead email"
-            )
+                message = gr.Textbox(
+                    label="Instruction",
+                    placeholder="Describe the agent your company needs...",
+                )
 
-            requested_time = gr.Textbox(
-                label="Requested time"
-            )
+                send_button = gr.Button(
+                    "Send",
+                    variant="primary",
+                )
 
-        booking_button = gr.Button(
-            "Book mock meeting"
-        )
+            with gr.Column(scale=2):
+                config_preview = gr.JSON(
+                    value=state_value["config"],
+                    label="Current assistant configuration",
+                )
 
-        bookings = gr.JSON(
-            value=[],
-            label="Local bookings",
-        )
+                deploy_button = gr.Button(
+                    "Deploy to ElevenLabs",
+                    variant="primary",
+                )
 
-    reset_button = gr.Button("Reset demo")
+                agent_id = gr.Textbox(
+                    label="Deployed ElevenLabs agent ID",
+                    interactive=False,
+                )
 
-    builder_inputs = [
-        message,
-        chatbot,
-        state,
-    ]
+                dashboard_link = gr.Markdown()
 
-    builder_outputs = [
-        chatbot,
-        state,
-        config_preview,
-        status,
-        message,
-    ]
+        status = gr.Markdown(elem_id="status")
+        reset_button = gr.Button("Reset demo")
 
-    message.submit(
-        fn=update_builder,
-        inputs=builder_inputs,
-        outputs=builder_outputs,
-    )
-
-    send_button.click(
-        fn=update_builder,
-        inputs=builder_inputs,
-        outputs=builder_outputs,
-    )
-
-    deploy_button.click(
-    fn=deploy_agent,
-    inputs=state,
-    outputs=[
-        state,
-        status,
-        agent_id,
-        dashboard_url,
-    ],
-    )
-
-    booking_button.click(
-        fn=book_meeting,
-        inputs=[
-            lead_name,
-            lead_email,
-            requested_time,
+        builder_inputs = [message, chatbot, state]
+        builder_outputs = [
+            chatbot,
             state,
-        ],
-        outputs=[
-            state,
-            bookings,
+            config_preview,
             status,
-        ],
-    )
+            message,
+        ]
 
-    reset_button.click(
-    fn=reset_demo,
-    outputs=[
-        chatbot,
-        state,
-        config_preview,
-        bookings,
-        status,
-        agent_id,
-        dashboard_url,
-        message,
-    ],
-    )
+        message.submit(
+            fn=update_builder,
+            inputs=builder_inputs,
+            outputs=builder_outputs,
+        )
+
+        send_button.click(
+            fn=update_builder,
+            inputs=builder_inputs,
+            outputs=builder_outputs,
+        )
+
+        deploy_button.click(
+            fn=deploy_agent,
+            inputs=state,
+            outputs=[
+                state,
+                status,
+                agent_id,
+                dashboard_link,
+            ],
+        )
+
+        reset_button.click(
+            fn=reset_demo,
+            outputs=[
+                chatbot,
+                state,
+                config_preview,
+                status,
+                agent_id,
+                dashboard_link,
+                message,
+            ],
+        )
+
+    return demo
+
+
+demo = build_ui()

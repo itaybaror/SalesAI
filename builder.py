@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from pydantic import BaseModel, Field
 
-from tools import deploy_to_elevenlabs, mock_book_meeting
+from tools import deploy_to_elevenlabs
 
 load_dotenv()
 
@@ -39,7 +39,6 @@ REQUIRED_FIELDS = {
     "opening_message",
 }
 
-
 INITIAL_MESSAGE = """
 Tell me about the lead qualification agent you need.
 
@@ -50,27 +49,26 @@ Please include:
 4. What makes a lead qualified
 5. What the agent should say when the call begins
 
-You can also provide tone or additional restrictions. I will not invent
-company information or qualification rules.
+You can also provide a tone or additional restrictions.
+I will not invent company information or qualification rules.
 """.strip()
-
 
 SYSTEM_PROMPT = """
 You configure outbound lead qualification voice agents.
 
-Strict rules:
+Rules:
 - Use only information explicitly provided by the user.
-- Never invent or assume company facts, products, pricing, policies,
-  qualification rules, or customer details.
+- Never invent company facts, products, pricing, policies, customers,
+  qualification rules, or opening messages.
 - Preserve existing values unless the user explicitly changes them.
-- Leave unknown optional text fields as null.
-- Leave unknown lists empty.
-- Never generate or change voice_id.
-- Ask clearly for any missing required information.
-- Do not say the configuration is ready unless all required fields are present.
+- Leave unknown text fields as null and unknown lists empty.
+- Never generate or modify voice_id.
+- Ask clearly for missing required information.
+- Do not say the configuration is ready unless every required field exists.
 """.strip()
 
 
+# Creates a fresh local application state.
 def initial_state() -> dict[str, Any]:
     config = AgentConfig(
         voice_id=os.getenv("ELEVENLABS_VOICE_ID", "")
@@ -79,10 +77,10 @@ def initial_state() -> dict[str, Any]:
     return {
         "config": config.model_dump(),
         "elevenlabs_agent_id": None,
-        "bookings": [],
     }
 
 
+# Returns the builder's initial chat message.
 def initial_history() -> list[dict[str, str]]:
     return [
         {
@@ -92,6 +90,7 @@ def initial_history() -> list[dict[str, str]]:
     ]
 
 
+# Creates an authenticated OpenAI client.
 def get_client() -> OpenAI:
     api_key = os.getenv("OPENAI_API_KEY")
 
@@ -101,14 +100,16 @@ def get_client() -> OpenAI:
     return OpenAI(api_key=api_key)
 
 
+# Finds required configuration fields that are still empty.
 def missing_fields(config: dict[str, Any]) -> list[str]:
-    return [
+    return sorted(
         field
         for field in REQUIRED_FIELDS
         if not config.get(field)
-    ]
+    )
 
 
+# Updates the configuration from the latest chat message.
 def update_builder(
     message: str,
     history: list[dict[str, str]],
@@ -146,11 +147,11 @@ def update_builder(
         reply = result.reply
 
         if missing:
-            readable = ", ".join(
+            fields = ", ".join(
                 field.replace("_", " ")
                 for field in missing
             )
-            reply += f"\n\nStill needed: {readable}."
+            reply += f"\n\nStill needed: {fields}."
         else:
             reply += "\n\nThe configuration is ready for review."
 
@@ -164,16 +165,17 @@ def update_builder(
     return history, state, state["config"], reply, ""
 
 
+# Creates or updates the configured ElevenLabs agent.
 def deploy_agent(state: dict[str, Any]):
     missing = missing_fields(state["config"])
 
     if missing:
-        readable = ", ".join(
+        fields = ", ".join(
             field.replace("_", " ")
             for field in missing
         )
 
-        return state, f"Cannot deploy. Missing: {readable}.", "", ""
+        return state, f"Cannot deploy. Missing: {fields}.", "", ""
 
     state = copy.deepcopy(state)
 
@@ -187,35 +189,15 @@ def deploy_agent(state: dict[str, Any]):
 
     state["elevenlabs_agent_id"] = result["agent_id"]
 
-    dashboard_link = (
-        f"[Open this agent in ElevenLabs]({result['dashboard_url']})"
+    link = (
+        f"[Open this agent in ElevenLabs]"
+        f"({result['dashboard_url']})"
     )
 
-    return (
-        state,
-        result["message"],
-        result["agent_id"],
-        dashboard_link,
-    )
+    return state, result["message"], result["agent_id"], link
 
 
-def book_meeting(
-    name: str,
-    email: str,
-    requested_time: str,
-    state: dict[str, Any],
-):
-    result = mock_book_meeting(name, email, requested_time)
-
-    if not result["success"]:
-        return state, state["bookings"], result["message"]
-
-    state = copy.deepcopy(state)
-    state["bookings"].append(result["booking"])
-
-    return state, state["bookings"], result["message"]
-
-
+# Resets all local demo state.
 def reset_demo():
     state = initial_state()
 
@@ -223,7 +205,6 @@ def reset_demo():
         initial_history(),
         state,
         state["config"],
-        [],
         "Demo reset.",
         "",
         "",

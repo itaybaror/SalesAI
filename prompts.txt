@@ -1,33 +1,59 @@
-I'm looking for an assistant for AcmeCRM.
+We're AcmeCRM, and we want to call people who signed up for a free trial but never booked a demo.
 
-We sell CRM software to small businesses, and I'd like the assistant to call people who signed up for a free trial but never booked a demo.
+The goal of the call is to see whether they're a good fit for our product and book a demo if they are.
 
-It should learn about their business, answer basic questions about the product, figure out whether they're a good fit, and schedule a meeting with our sales team if they are.
+The agent should ask:
+- How many employees are in your company?
+- What CRM are you currently using?
+- What are your biggest sales challenges?
+- When are you planning to purchase a new CRM?
 
-Please collect:
-- Company name
-- Industry
-- Number of employees
-- Current CRM
-- Biggest sales challenge
-- Budget
-- Expected purchase timeline
+A lead should be considered qualified if they have at least 10 employees and are planning to buy within the next six months.
 
-Only schedule a meeting if they have at least 10 employees and are planning to buy within the next six months.
+The call should begin with:
+"Hi, this is Sarah calling from AcmeCRM. I noticed you recently signed up for a trial and wanted to see if I could ask a few quick questions."
 
-I'd like the conversation to feel friendly but still professional.
+Keep the conversation friendly and professional.
 
 
 
+I run a real estate agency called Skyline Realty.
+
+I want the agent to call people who filled out one of our property inquiry forms.
+
+The goal is to understand what they're looking for and schedule a call with one of our agents.
+
+Please ask:
+- Which city are you interested in?
+- What's your budget?
+- Will you need financing?
+- When are you hoping to buy?
+- How many bedrooms are you looking for?
+
+A lead is qualified if they're planning to purchase within the next three months.
+
+Start the conversation with:
+"Hi, this is Alex from Skyline Realty. I'm following up on your recent property inquiry. Do you have a minute to chat?"
+
+Keep the conversation relaxed and conversational.
 
 
 
-We're a family dental clinic called Bright Smile Dental.
+We're GreenSpark Solar.
 
-I'd like an assistant that answers incoming calls and helps patients book appointments.
+We'd like to call homeowners who requested a quote on our website.
 
-It should collect the patient's name, phone number, whether they're a new or existing patient, the reason for the appointment, and when they'd like to come in.
+The goal is to determine whether they're a good candidate for solar and schedule a consultation.
 
-If someone asks something medical or about pricing that it doesn't know, it should explain that someone from the clinic will get back to them.
+The agent should ask:
+- Do you own your home?
+- What city do you live in?
+- Approximately how much is your monthly electricity bill?
+- Are you interested in purchasing or financing a system?
 
-I'd like it to sound warm, calm, and welcoming.
+A lead should be considered qualified if they own the property and their electricity bill is at least $150 per month.
+
+The opening message should be:
+"Hi, this is Emma from GreenSpark Solar. You recently requested information about solar, and I wanted to ask a few quick questions to see how we can help."
+
+Please sound knowledgeable without being overly sales-focused.
